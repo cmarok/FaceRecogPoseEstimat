@@ -1,3 +1,5 @@
+
+
 //
 //  main.cpp
 //  Project
@@ -45,6 +47,12 @@ int main(int argc, const char * argv[]) {
     
     //display subject function
     Display_subject(Faces,subject_number);
+
+    Mat codeBook;
+    vector<vector<vector<Mat>>> faceDescriptors;
+    int codeWords = 10;
+
+    BOW::faceRecognition(Faces, codeBook, faceDescriptors, codeWords);
     return 0;
 }
 
@@ -55,10 +63,21 @@ void LoadQMUL(vector<vector<vector<Mat>>> &Faces)
     //change to location of grey dataset when running on another machine
     const string Dataset_location = "/Users/user1/Desktop/uni_archive/semester5/ECSE415vision/project/QMUL_FaceDatabase/Set1_Greyscale/";
     
-    const vector<string> Subject_names = { "AdamB",  "AdamBTest", "AndreeaV" ,"CarlaB","ColinP","DanJ","DennisP","DennisPNoGlasses","DerekC","DerekCTest","GrahamW","HeatherL","Jack", "JamieS","JamieSTest","JeffN","John","Jon","KateS","KatherineW","KeithC","KrystynaN","PaulV","RichardB", "RichardBTest","RichardH","RichardHTest","SarahL","SeanG","SeanGNoGlasses","SimonB","SueW","TasosH","TomK","YogeshR", "YongminY"};
-    const vector<string> Subject_names2 = { "AdamB",  "AdamB", "AndreeaV" ,"CarlaB","ColinP","DanJ","DennisP","DennisPNoGlasses","DerekC","DerekC","GrahamW","HeatherL","Jack", "JamieS","JamieS","JeffN","John","Jon","KateS","KatherineW","KeithC","KrystynaN","PaulV","RichardB", "RichardB","RichardH","RichardH","SarahL","SeanG","SeanGNoGlasses","SimonB","SueW","TasosH","TomK","YogeshR", "YongminY"};
-    const vector<string> Tilt_code = {"060","070","080","090","100","110","120"};
-    const vector<string> Pan_code = {"000","010","020","030","040","050","060","070","080","090","100","110","120","130","140", "150","160","170","180"};
+    const vector<string> Subject_names = {"AdamB", "AdamBTest", "AndreeaV", "CarlaB", "ColinP", "DanJ", "DennisP",
+                                          "DennisPNoGlasses", "DerekC", "DerekCTest", "GrahamW", "HeatherL", "Jack",
+                                          "JamieS", "JamieSTest", "JeffN", "John", "Jon", "KateS", "KatherineW", "KeithC",
+                                          "KrystynaN", "PaulV", "RichardB", "RichardBTest", "RichardH", "RichardHTest",
+                                          "SarahL", "SeanG", "SeanGNoGlasses", "SimonB", "SueW", "TasosH", "TomK",
+                                          "YogeshR", "YongminY"};
+    const vector<string> Subject_names2 = {"AdamB", "AdamB", "AndreeaV", "CarlaB", "ColinP", "DanJ", "DennisP",
+                                           "DennisPNoGlasses", "DerekC", "DerekC", "GrahamW", "HeatherL", "Jack",
+                                           "JamieS", "JamieS", "JeffN", "John", "Jon", "KateS", "KatherineW", "KeithC",
+                                           "KrystynaN", "PaulV", "RichardB", "RichardB", "RichardH", "RichardH", "SarahL",
+                                           "SeanG", "SeanGNoGlasses", "SimonB", "SueW", "TasosH", "TomK", "YogeshR",
+                                           "YongminY"};
+    const vector<string> Tilt_code = {"060", "070", "080", "090", "100", "110", "120"};
+    const vector<string> Pan_code = {"000", "010", "020", "030", "040", "050", "060", "070", "080", "090",
+                                     "100", "110", "120", "130", "140", "150", "160", "170", "180"};
     //there may be nicer ways of doing it but this was the fastest to code (and i expect run since no int->str conversions etc)
     
     //loops load all the images
