@@ -15,6 +15,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "bow.h"
+#include "headpose.h"
 #include <iostream>
 #include <string>
 #include <iomanip>
@@ -24,24 +25,15 @@
 using namespace cv;
 using namespace std;
 
-
-
-
 void LoadQMUL(vector<vector<vector<Mat>>> &Faces);
-
-void LoadHeadPose(vector<vector<vector<Mat>>> &Pose);
-
 void Display_subject(vector<vector<vector<Mat>>> &Faces, int Subject_number);
 
-int main(int argc, const char * argv[]) {
-    
-    
-    
+int main(int argc, const char * argv[]) 
+{    
     //faces array
     vector<vector<vector<Mat>>> Faces;
     vector<vector<vector<Mat>>> Pose;
     LoadQMUL(Faces);
-    LoadHeadPose(Pose);
     
     //choose who to display
     int subject_number = 35;//index
@@ -54,9 +46,12 @@ int main(int argc, const char * argv[]) {
     int codeWords = 10;
 
     BOW::faceRecognition(Faces, codeBook, faceDescriptors, codeWords);
+    HeadPose hp = HeadPose("/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/HeadPoseImageDatabase/");
+
+//    imshow("test", hp.images[0][0][0][0]);
+//    waitKey(0);
     return 0;
 }
-
 
 void LoadQMUL(vector<vector<vector<Mat>>> &Faces)
 {
@@ -84,7 +79,7 @@ void LoadQMUL(vector<vector<vector<Mat>>> &Faces)
     //loops load all the images
     for (int i = 0; i < Subject_names.size(); i++){
         vector<vector<Mat>> Tilting;
-        for (int j=0; j<Tilt_code.size();j++){
+        for (int j = 0; j < Tilt_code.size(); j++){
             vector<Mat> Panning;
             for (int k=0; k<Pan_code.size();k++){
                 string temp = Dataset_location + Subject_names[i]+"Grey/"+Subject_names2[i]+"_"+Tilt_code[j]+"_"+Pan_code[k]+".ras";
@@ -133,34 +128,3 @@ void Display_subject(vector<vector<vector<Mat>>> &Faces, int Subject_number)
     waitKey(0);
    
 }
-
-
-void LoadHeadPose(vector<vector<vector<Mat>>> &Pose){
-    const string Dataset_location = "/Users/user1/Desktop/uni_archive/semester5/ECSE415vision/project/HeadPoseImageDatabase/";
-    const vector<string> angle_code = {"-90","-75","-60","-45","-30","-15","+0","+15","+30","+45","+60","+75","+90"};
-    int m=0;
-    for (int i=0;i<15;i++){ //each person
-        for (int j = 0; j<2;j++){ //each series
-            for(int k=0; k<angle_code.size();k++){//each tilt angle
-                vector<Mat> Panning;
-                for (int l=0;l<angle_code.size();l++){//each pan angle
-                    string temp = Dataset_location + "Person0" + to_string(i+1) + "/person0" + to_string(i+1)+to_string(j) + to_string(m) + angle_code[k]+angle_code[l];
-                    if (i>9){
-                        temp = Dataset_location + "Person" + to_string(i+1) + "/person" + to_string(i+1)+to_string(j) + to_string(m) + angle_code[k]+angle_code[l];
-                    }
-                    m++;
-                    Panning.push_back(imread(temp+".jpg"));
-                    
-                    
-                    
-                    
-                    
-                }
-            }
-        
-        }
-    }
-}
-
-
-///Users/user1/Desktop/uni_archive/semester5/ECSE415vision/project/HeadPoseImageDatabase
