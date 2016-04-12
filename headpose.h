@@ -23,7 +23,11 @@ private:
 public:
     vector<vector<vector<vector<Mat>>>> images;
 
+    vector<vector<vector<vector<Rect>>>> annotations;
+
     HeadPose(string path);
+
+    void displayImages(int serie, int subject);
 };
 
 #endif // HEADPOSE_H

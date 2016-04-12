@@ -8,23 +8,24 @@ using namespace cv;
 
 HeadPose::HeadPose(string path)
 {
-    cout << "TEST **** " << id[0] << " " << tilt[0] << " " << pan[0] << endl;
-
     string dir, file_read;
     int num_image, line_num, x_center, y_center;
 
     // for each person
     for (int i = 0; i < id.size(); i++) {
         vector<vector<vector<Mat>>> id_vector;
+        vector<vector<vector<Rect>>> id_annotation;
 
         // for each serie
         for (int s = 0; s < serie.size(); s++) {
             vector<vector<Mat>> serie_vector;
+            vector<vector<Rect>> serie_annotation;
             num_image = 14;
 
             // for each tilt from -30 to +30
             for (int t = 0; t < tilt.size(); t++) {
                 vector<Mat> tilt_vector;
+                vector<Rect> tilt_annotation;
 
                 // for each pan
                 for (int p = 0; p < pan.size(); p++) {
@@ -54,17 +55,25 @@ HeadPose::HeadPose(string path)
                     if (y_center-50 < 0)
                         y_center = 50;
 
-                    Mat roi(original, Rect(x_center-50, y_center-50, 100, 100));
-
+                    // Store annotations Rect(x, y, width, height)
+                    tilt_annotation.push_back(Rect(x_center-50, y_center-50, 100, 100));
                     tilt_vector.push_back(roi);
                 }
 
+                serie_annotation.push_back(tilt_annotation);
                 serie_vector.push_back(tilt_vector);
             }
 
+            id_annotation.push_back(serie_annotation);
             id_vector.push_back(serie_vector);
         }
 
+        annotations.push_back(id_annotation);
         images.push_back(id_vector);
     }
+}
+
+void HeadPose::displayImages(int serie, int subject)
+{
+
 }
