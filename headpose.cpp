@@ -57,7 +57,7 @@ HeadPose::HeadPose(string path)
 
                     // Store annotations Rect(x, y, width, height)
                     tilt_annotation.push_back(Rect(x_center-50, y_center-50, 100, 100));
-                    tilt_vector.push_back(roi);
+                    tilt_vector.push_back(original);
                 }
 
                 serie_annotation.push_back(tilt_annotation);
