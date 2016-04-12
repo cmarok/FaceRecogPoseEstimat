@@ -41,15 +41,14 @@ int main(int argc, const char * argv[])
     //display subject function
     Display_subject(Faces,subject_number);
 
+    HeadPose hp = HeadPose("/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/HeadPoseImageDatabase/");
+    hp.displayImages(2, 15);
+
     Mat codeBook;
     vector<vector<vector<Mat>>> faceDescriptors;
     int codeWords = 10;
 
     BOW::faceRecognition(Faces, codeBook, faceDescriptors, codeWords);
-    HeadPose hp = HeadPose("/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/HeadPoseImageDatabase/");
-
-//    imshow("test", hp.images[0][0][0][0]);
-//    waitKey(0);
     return 0;
 }
 

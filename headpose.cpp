@@ -73,7 +73,32 @@ HeadPose::HeadPose(string path)
     }
 }
 
-void HeadPose::displayImages(int serie, int subject)
+void HeadPose::displayImages(int serie_id, int subject_id)
 {
+    Mat display;
+    Size size(1440, 900);
 
+    for (int t = 0; t < images[subject_id-1][serie_id-1].size(); t++) {
+        Mat img_row0 = images[subject_id-1][serie_id-1][t][0];
+        rectangle(img_row0, annotations[subject_id-1][serie_id-1][t][0], Scalar(0, 255, 0), 1, 8);
+
+        for (int p = 1; p < images[subject_id-1][serie_id-1][t].size(); p++) {
+            Mat img_row = images[subject_id-1][serie_id-1][t][p];
+            rectangle(img_row, annotations[subject_id-1][serie_id-1][t][p], Scalar(0, 255, 0), 1, 8);
+
+            hconcat(img_row0, img_row, img_row0);
+        }
+
+        // If it is the first row
+        if (t == 0) {
+            display = img_row0;
+        } else {
+            vconcat(display, img_row0, display);
+        }
+    }
+
+    resize(display, display, size);
+    imshow("Face Image", display);
+    namedWindow("Face Image", WINDOW_AUTOSIZE);
+    waitKey(0);
 }

@@ -27,7 +27,7 @@ public:
 
     HeadPose(string path);
 
-    void displayImages(int serie, int subject);
+    void displayImages(int serie_id, int subject_id);
 };
 
 #endif // HEADPOSE_H
