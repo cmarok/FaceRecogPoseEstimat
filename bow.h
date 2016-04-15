@@ -11,21 +11,21 @@ using namespace cv;
 class BOW
 {
 public:
-    static void crossValidation(vector<vector<vector<Mat>>> &Faces, int const numCodeWords);
+    static void recognition(vector<vector<vector<Mat>>> &Faces, int const numCodeWords);
 
-    static void crossValidationProb(vector<vector<vector<Mat>>> &Faces, int const numCodeWords);
+    static void recognitionP(vector<vector<vector<Mat>>> &Faces, int const numCodeWords);
 
-    static void faceRecognition(vector<vector<vector<Mat>>> &Faces, Mat &codeBook,
+    static void faceTrain(vector<vector<vector<Mat>>> &Faces, Mat &codeBook,
                                 vector<vector<vector<Mat>>> &BOWrepresentation, int const numCodeWords, int const k_th);
 
     static double faceTest(const vector<vector<vector<Mat>>> &Faces, const Mat &codeBook,
                            const vector<vector<vector<Mat>>> &BOWrepresentation, int const k_th);
 
-    static void faceRecognitionProb(vector<vector<vector<Mat>>> &Faces, Mat &codeBook,
+    static void faceTrainP(vector<vector<vector<Mat>>> &Faces, Mat &codeBook,
                                     vector<vector<vector<Mat>>> &BOWrepresentation, int const numCodeWords, int const k_th,
                                     vector<Mat> &mean, vector<Mat> &covar);
 
-    static double faceTestProb(const vector<vector<vector<Mat>>> &Faces, const Mat &codeBook,
+    static double faceTestP(const vector<vector<vector<Mat>>> &Faces, const Mat &codeBook,
                          const vector<vector<vector<Mat>>> &BOWrepresentation, int const k_th,
                              const vector<Mat> &mean, const vector<Mat> &covar);
 };
