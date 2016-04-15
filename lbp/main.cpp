@@ -1,4 +1,4 @@
-#include "stdafx.h"
+
 #include <opencv2/opencv.hpp>
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/nonfree/features2d.hpp"
@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-
+#include "stdafx.h"
 #include "lbp.h"
 
 
@@ -20,6 +20,8 @@ using namespace std;
 
 const int NUM_FOLDS = 7;
 
+int face_recog(int subject, vector<vector<vector<Mat>>> &Faces, int levels);
+vector<vector<vector<Mat>>> spatialPyramid(vector<vector<vector<Mat>>>&faces, int levels);
 void LoadQMUL(vector<vector<vector<Mat>>> &Faces);
 void Display_subject(vector<vector<vector<Mat>>> &Faces, int Subject_number, vector<vector<vector<vector<Mat>>>> &Pose);
 
@@ -27,7 +29,7 @@ int main(){
 	vector<vector<vector<Mat>>> Faces;
 	vector<vector<vector<Mat>>> Pose;
 	vector<vector<vector<Mat>>> Hists;
-	LoadQMUL(Faces);
+	//LoadQMUL(Faces);
 	int levels = 0;
 
 	
@@ -38,85 +40,190 @@ int main(){
 	namedWindow("hello2", WINDOW_AUTOSIZE);
 	waitKey(0);*/
 	int subject_number = 2;
+	int result = face_recog(subject_number, Faces, 3);
 
 }
 
-void face_recog(int subject, vector<vector<vector<Mat>>> &Faces, int levels){
+vector<vector<vector<Mat>>> spatialPyramid(vector<vector<vector<Mat>>>&faces, int levels){
 	vector<vector<vector<Mat>>> Hists;
-
-	//shrink data set
-	//keep one set in for each name
-	vector<vector<Mat>> sub1;
-	int s = 0;
-	while (s < 4){
-		int i = 0;
-		while (i < Faces[s].size()){
-			sub1.push_back(Faces[s][i]);
-			i++;
+	for (int k = 0; k < faces.size(); k++){
+		vector<vector<Mat>> Tilting;
+		for (int l = 0; l < faces[k].size(); l++){
+			vector<Mat> Panning;
+			for (int m = 0; m < faces[k][l].size(); m++){
+				Mat tmp = faces[k][l][m];
+				Mat abc = LBPHistograms(tmp, levels);
+				Panning.push_back(abc);
+			}
+			Tilting.push_back(Panning);
 		}
-		s++;
+		Hists.push_back(Tilting);
 	}
+	return Hists;
+}
+int face_recog(int subject, vector<vector<vector<Mat>>> &Faces, int levels){
+	
+	vector<vector<vector<Mat>>> folded = Faces;
+	/*folded.resize(7);
+	for (int i = 0; i < folded.size(); i++){
+		srand(31);
+		seven_fold_cv
+	}*/
+	//shrink data set
+
+	//then load
+	//scramble data
+	for (int i = 0; i < folded.size(); i++) {
+		random_shuffle(folded[i].begin(), folded[i].end());
+		for (int j = 0; j < folded[i].size(); j++) {
+			random_shuffle(folded[i][j].begin(), folded[i][j].end());
+		}
+	}
+	vector<Mat > sub2;
+	for (int qwerty = 0; qwerty < folded.size(); qwerty++){
+		sub2.push_back(folded[qwerty][1][1]);
+
+	}
+
+	vector<vector<Mat>> sub1;
+	sub1.push_back(sub2);
 	vector<vector<vector<Mat>>> sub;
 	sub.push_back(sub1);
-	//add in sets to test here
-	sub.push_back(sub1);
+	//vector<Mat > sub2;
+	//for (int qwerty = 0; qwerty < folded.size(); qwerty++){
+	//	sub2.push_back(folded[qwerty][srand(6)][srand(18)]);
+
+	//}
+	
+
+	//int s = 0;
+	//while (s < 4){
+	//	int i = 0;
+	//	while (i < folded[s].size()){
+	//		sub1.push_back(folded[s][i]);
+	//		i++;
+	//	}
+	//	s++;
+	//}
+	//vector<vector<vector<Mat>>> sub;
+	//sub.push_back(sub1);
+	////add in sets to test here
+	//sub.push_back(sub1);
+
 		
 	vector<vector<vector<Mat>>> LBP_faces = FacesLBP(sub);
+	//0level hists
+	vector<vector<vector<Mat>>> hist0 = spatialPyramid(LBP_faces, 0);
+	//0level person
+	vector<vector<vector<Mat>>> testHists;
+	vector<vector<vector<Mat>>> test;
+	test.push_back(folded[subject]);
+
+	vector<vector<vector<Mat>>> subj0 = spatialPyramid(test, 0);
+
+
 	vector<double>dist(levels);
-		//computes spatial pyramid histagram for given images
-		for (int k = 0; k < LBP_faces.size(); k++){
-			vector<vector<Mat>> Tilting;
-			for (int l = 0; l < LBP_faces[k].size(); l++){
-				vector<Mat> Panning;
-				for (int m = 0; m < LBP_faces[k][l].size(); m++){
-					Mat tmp = LBP_faces[k][l][m];
-					Mat abc = LBPHistograms(tmp, levels);
-					Panning.push_back(abc);
+	double best = numeric_limits<double>::max();
+	int guess;
+
+	for (int i = 0; i < hist0.size(); i++){
+		for (int j = 0; j < hist0[i].size(); j++){
+			for (int k = 0; k < hist0[i][j].size(); k++)
+			{
+				dist[0] = compareHist(subj0[i][j][k], hist0[i][j][k], CV_COMP_CHISQR);
+
+				double diff = dist[0];
+				if (diff < best) {
+					best = diff;
+					guess = k;
 				}
-				Tilting.push_back(Panning);
 			}
-			Hists.push_back(Tilting);
 		}
-		//get hist for test
-		vector<vector<vector<Mat>>> testHists;
-		vector<vector<vector<Mat>>> test;
-		test.push_back(Faces[subject]);
+	}
 
-		for (int k = 0; k < test.size(); k++){
-			vector<vector<Mat>> Tilting;
-			for (int l = 0; l < test[k].size(); l++){
-				vector<Mat> Panning;
-				for (int m = 0; m < test[k][l].size(); m++){
-					Mat tmp = test[k][l][m];
-					Mat abc = LBPHistograms(tmp, levels);
-					Panning.push_back(abc);
+	//1 level
+
+	vector<vector<vector<Mat>>> hist1 = spatialPyramid(LBP_faces, 1);
+	//1level person
+
+	vector<vector<vector<Mat>>> subj1 = spatialPyramid(test, 1);
+
+
+	for (int i = 0; i < hist0.size(); i++){
+		for (int j = 0; j < hist0[i].size(); j++){
+			for (int k = 0; k < hist0[i][j].size(); k++)
+			{
+				dist[1] = compareHist(subj1[i][j][k], hist1[i][j][k], CV_COMP_CHISQR);
+
+				double sum = 0;
+				sum = (sum + dist[1])/2;
+
+				double diff = dist[0] / 2 + sum;
+				if (diff < best) {
+					best = diff;
+					guess = k;
 				}
-				Tilting.push_back(Panning);
-			}
-			testHists.push_back(Tilting);
-		}
-
-		double best_score_3;
-		int guess_3;
-		for (int i = 0; i < Hists.size(); i++){
-			for (int j = 0; j < Hists[i].size(); j++){
-				for (int k = 0; k < Hists[i][j].size(); k++)
-				{
-					dist[levels] = compareHist(testHists[i][j][k], Hists[i][j][k], CV_COMP_CHISQR);
-					double sum = 0;
-					for (int s = 1; s < levels; s++){
-						sum = sum + dist[s] / (pow(2, (levels - 1 - s + 1)));
-					}
-					double diff = dist[0] / (pow(2, (levels - 1))) + sum;
-
-					if (diff < best_score_3){
-						best_score_3 = diff;
-						guess_3 = i;
-					}
-				}			
 			}
 		}
+	}
 
+	//2 level
+
+	vector<vector<vector<Mat>>> hist2 = spatialPyramid(LBP_faces, 2);
+	//2level person
+
+	vector<vector<vector<Mat>>> subj2 = spatialPyramid(test, 2);
+
+	for (int i = 0; i < hist0.size(); i++){
+		for (int j = 0; j < hist0[i].size(); j++){
+			for (int k = 0; k < hist0[i][j].size(); k++)
+			{
+				dist[2] = compareHist(subj2[i][j][k], hist2[i][j][k], CV_COMP_CHISQR);
+
+				double sum = 0;
+				for (int lvl = 0; lvl < 2; lvl++){
+					sum = (sum + dist[lvl]) / (pow(2, (2 - lvl + 1)));
+				}
+				
+
+				double diff = dist[0] / (pow(2, (2))) + sum;
+				if (diff < best) {
+					best = diff;
+					guess = k;
+				}
+			}
+		}
+	}
+
+	//3 level
+
+	vector<vector<vector<Mat>>> hist3 = spatialPyramid(LBP_faces, 3);
+	//3level person
+
+	vector<vector<vector<Mat>>> subj3 = spatialPyramid(test, 3);
+
+
+	for (int i = 0; i < hist0.size(); i++){
+		for (int j = 0; j < hist0[i].size(); j++){
+			for (int k = 0; k < hist0[i][j].size(); k++)
+			{
+				dist[1] = compareHist(subj3[i][j][k], hist3[i][j][k], CV_COMP_CHISQR);
+
+				double sum = 0;
+				for (int lvl = 0; lvl < 3; lvl++){
+					sum = (sum + dist[lvl]) / (pow(2, (3 - lvl + 1)));
+				}
+
+
+				double diff = dist[0] / (pow(2, (3))) + sum;
+				if (diff < best) {
+					best = diff;
+					guess = k;
+				}
+			}
+		}
+	}
+	return guess;
 }
 
 
