@@ -25,6 +25,10 @@
 using namespace cv;
 using namespace std;
 
+void createPoseSet(vector<vector<vector<Mat>>> &Faces, vector<vector<Mat>> &PoseSet);
+void createFaceSet(vector<vector<vector<Mat>>> &Faces, vector<Mat> &faceSet);
+void partitionImages(vector<Mat> &faceSet, vector<Mat> &training, vector<Mat> &testing, int k, int fold);
+
 void LoadQMUL(vector<vector<vector<Mat>>> &Faces);
 void Display_subject(vector<vector<vector<Mat>>> &Faces, int Subject_number);
 
@@ -52,6 +56,49 @@ int main(int argc, const char * argv[])
     // --------------------------------------------
     return 0;
 }
+
+
+// Rearrange QMUL images, sorting by pose class
+// Images in the output vector can be accessed as: poseSet[poseClass][subjectNumber]
+void createPoseSet(vector<vector<vector<Mat>>> &Faces, vector<vector<Mat>> &poseSet){
+
+	for (int i = 0; i < Faces[0].size(); i++){
+		for (int j = 0; j < Faces[0][0].size(); j++){
+			vector<Mat> currentPose;
+			for (int k = 0; k < Faces.size(); k++){
+				currentPose.push_back(Faces[k][i][j]); 
+			}
+			poseSet.push_back(currentPose);
+		}
+	}
+}
+
+// Rearrange QMUL images, putting every image in a single vector
+void createFaceSet(vector<vector<vector<Mat>>> &Faces, vector<Mat> &faceSet){
+
+	for (int i = 0; i < Faces.size(); i++){
+		for (int j = 0; j < Faces[i].size(); j++){
+			for (int k = 0; k < Faces[i][j].size(); k++){
+				faceSet.push_back(Faces[i][j][k]);
+			}
+		}
+	}
+}
+
+// Partition the images into training and testing images for k-fold cross validation
+void partitionImages(vector<Mat> &faceSet, vector<Mat> &training, vector<Mat> &testing, int k, int fold){
+	
+	for (int i = 0; i < faceSet.size(); i++){
+		if ((i%k) == fold){
+			testing.push_back(faceSet[i]);
+		}
+		else{
+			training.push_back(faceSet[i]);
+		}
+	}
+}
+
+
 
 void LoadQMUL(vector<vector<vector<Mat>>> &Faces)
 {
