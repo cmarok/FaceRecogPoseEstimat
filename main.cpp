@@ -26,6 +26,7 @@ using namespace cv;
 using namespace std;
 
 void createPoseSet(vector<vector<vector<Mat>>> &Faces, vector<vector<Mat>> &PoseSet);
+void poseEstimationSet(vector<vector<vector<Mat>>> &Faces, vector<vector<vector<Mat>>> &poseSet);
 void createFaceSet(vector<vector<vector<Mat>>> &Faces, vector<Mat> &faceSet);
 void partitionImages(vector<Mat> &faceSet, vector<Mat> &training, vector<Mat> &testing, int k, int fold);
 
@@ -49,10 +50,13 @@ int main(int argc, const char * argv[])
     hp.displayImages(2, 15);
 
     // --------- BOW TESTING ----------------------
-    initModule_nonfree();
-    int codeWords = 100;
-    BOW::recognition(Faces, codeWords);
+//    initModule_nonfree();
+//    int codeWords = 100;
+//    BOW::recognition(Faces, codeWords);
 //    BOW::recognitionP(Faces, codeWords);
+//    vector<vector<vector<Mat>>> pose;
+//    poseEstimationSet(Faces, pose);
+//    BOW::poseRecognition(pose, hp);
     // --------------------------------------------
     return 0;
 }
@@ -72,6 +76,44 @@ void createPoseSet(vector<vector<vector<Mat>>> &Faces, vector<vector<Mat>> &pose
 		}
 	}
 }
+
+// Rearrange QMUL images for pose estimation
+void poseEstimationSet(vector<vector<vector<Mat>>> &Faces, vector<vector<vector<Mat>>> &poseSet)
+{
+    int subject_size = Faces.size();
+    int tilt_size = Faces[0].size();
+    int pan_size = Faces[0][0].size();
+
+    for (int t = 0; t < tilt_size; t++) {
+        vector<vector<Mat>> pan_vec;
+
+        for (int p = 0; p < pan_size; p+=3) {
+            vector<Mat> sub_vec;
+
+            for (int s = 0; s <subject_size; s++) {
+                if (p == 0) {
+                    sub_vec.push_back(Faces[s][t][p]);
+                    sub_vec.push_back(Faces[s][t][p+1]);
+                }
+                else if (p == pan_size-1) {
+                    sub_vec.push_back(Faces[s][t][p-1]);
+                    sub_vec.push_back(Faces[s][t][p]);
+                }
+                else {
+                    sub_vec.push_back(Faces[s][t][p-1]);
+                    sub_vec.push_back(Faces[s][t][p]);
+                    sub_vec.push_back(Faces[s][t][p+1]);
+                }
+            }
+            pan_vec.push_back(sub_vec);
+        }
+
+        if (t == 1 || t == 4 || t == 6) {
+            poseSet.push_back(pan_vec);
+        }
+    }
+}
+
 
 // Rearrange QMUL images, putting every image in a single vector
 void createFaceSet(vector<vector<vector<Mat>>> &Faces, vector<Mat> &faceSet){

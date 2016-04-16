@@ -3,6 +3,7 @@
 #include <opencv2/nonfree/nonfree.hpp>
 #include <cmath>
 #include "bow.h"
+#include "headpose.h"
 
 #define K 7
 
@@ -315,4 +316,149 @@ double BOW::faceTestP(const vector<vector<vector<Mat>>> &Faces, const Mat &codeB
     cout << "At Codeword " << BOWrepresentation[0][0][0].cols << " @k = " << k_th << " recognition rate: " << result_ratio << endl;
 
     return result_ratio;
+}
+
+void BOW::poseRecognition(vector<vector<vector<Mat>>> pose, HeadPose hp)
+{
+    Mat codeBook;
+    vector<vector<vector<Mat>>> poseDescriptors;
+
+    poseTrain(pose, codeBook, poseDescriptors, 100);
+    poseTest(hp, codeBook, poseDescriptors);
+}
+
+void BOW::poseTrain(vector<vector<vector<Mat>>> &pose, Mat &codeBook, vector<vector<vector<Mat>>> &poseDescriptors,
+                          int const numCodeWords)
+{
+    // Create SIFT feature detector object & SIFT descriptor extractor object
+    Ptr<FeatureDetector> detector = FeatureDetector::create("SIFT");
+    Ptr<DescriptorExtractor> extractor = DescriptorExtractor::create("SIFT");
+    // Create Mat object to store all the SIFT descriptors of all training images of all categories
+    Mat D;
+    // Create keypoint object
+    vector<KeyPoint> keypoints;
+
+    for (int t = 0; t < pose.size(); t++) {
+        for (int p = 0; p < pose[t].size(); p++) {
+            for (int s = 0; s < pose[t][p].size(); s++) {
+                detector->detect(pose[t][p][s], keypoints);
+
+                Mat tmp;
+                // Comute the SIFT descriptor for the keypoints.
+                extractor->compute(pose[t][p][s], keypoints, tmp);
+                // Add the descriptors of the current image to D.
+                D.push_back(tmp);
+            }
+        }
+    }
+
+    // Create a bag of words trainer object.
+    BOWKMeansTrainer bow(numCodeWords, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, FLT_EPSILON), 1, KMEANS_PP_CENTERS);
+
+    // Add the descriptors to the bag of words trainer object.
+    bow.add(D);
+
+    // Compute the codebook.
+    codeBook = bow.cluster();
+
+    // Create a Brute Force descriptor matcher object & a bag of words descriptor extractor object.
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
+    Ptr<BOWImgDescriptorExtractor> bowExtractor = Ptr<BOWImgDescriptorExtractor>(new BOWImgDescriptorExtractor(extractor, matcher));
+
+    // Set the codebook of the bag of words descriptor extractor object.
+    bowExtractor->setVocabulary(codeBook);
+
+    for (int t = 0; t < pose.size(); t++) {
+        vector<vector<Mat>> hist_sub;
+
+        for (int p = 0; p < pose[t].size(); p++) {
+            vector<Mat> hist_tilt;
+
+            for (int s = 0; s < pose[t][p].size(); s++) {
+                detector->detect(pose[t][p][s], keypoints);
+
+                // Compute the bag of histogram representation.
+                Mat hist;
+                bowExtractor->compute2(pose[t][p][s], keypoints, hist);
+                normalize(hist, hist, 0, 100, NORM_MINMAX, -1, Mat());
+
+                hist_tilt.push_back(hist);
+            }
+
+            hist_sub.push_back(hist_tilt);
+        }
+
+        poseDescriptors.push_back(hist_sub);
+    }
+}
+
+void BOW::poseTest(const HeadPose hp, const Mat &codeBook, const vector<vector<vector<Mat>>> &poseDescriptor)
+{
+    // Create SIFT feature detector object & SIFT descriptor extractor object
+    Ptr<FeatureDetector> detector = FeatureDetector::create("SIFT");
+    Ptr<DescriptorExtractor> extractor = DescriptorExtractor::create("SIFT");
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
+    Ptr<BOWImgDescriptorExtractor> bowExtractor = Ptr<BOWImgDescriptorExtractor>(new BOWImgDescriptorExtractor(extractor, matcher));
+
+    // Create keypoint object
+    vector<KeyPoint> keypoints;
+    // Set the codebook of the bag of words descriptor extractor object.
+    bowExtractor->setVocabulary(codeBook);
+
+    double min;
+    int tilt_result, pan_result;
+
+    Mat result = Mat::zeros(21, 21, CV_64F);
+    Mat tmp = Mat::zeros(21, 21, CV_64F);
+
+    for (int i = 0; i < hp.images.size(); i++) {
+        for (int s = 0; s < hp.images[i].size(); s++) {
+            for (int t = 0; t < hp.images[i][s].size(); t++) {
+                for (int p = 0; p < hp.images[i][s][t].size(); p++) {
+                    int actual_t = t/2 + 1;
+                    int actual_p = p/2 + 1;
+
+                    Mat roi(hp.images[i][s][t][p], hp.annotations[i][s][t][p]);
+
+                    // Detect SIFT key points in image.
+                    detector->detect(roi, keypoints);
+
+                    Mat descriptor;
+                    bowExtractor->compute2(roi, keypoints, descriptor);
+                    // normalize descriptor
+                    normalize(descriptor, descriptor, 0, 100, NORM_MINMAX, -1, Mat());
+                    min = numeric_limits<double>::max();
+
+                    // Calculate the distance.
+                    for (int tt = 0; tt < poseDescriptor.size(); tt++) {
+                        for (int pt = 0; pt < poseDescriptor[tt].size(); pt++) {
+                            for (int st = 0; st < poseDescriptor[tt][pt].size(); st++) {
+                                // Calculate the chi square distance
+                                Mat a = descriptor - poseDescriptor[tt][pt][st];
+                                Mat b = a.mul(a);
+                                Mat c = b / (descriptor + poseDescriptor[tt][pt][st]);
+
+                                double result = sum(c)[0];
+
+                                if (result < min) {
+                                    min = result;
+                                    tilt_result = tt+1;
+                                    pan_result = pt+1;
+                                }
+                            }
+                        }
+                    }
+
+                    tmp.at<double>((actual_t*actual_p)-1, (tilt_result*pan_result)-1)++;
+                    double tmp1 = tmp.at<double>((actual_t*actual_p)-1, (tilt_result*pan_result)-1);
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < tmp.rows; i++) {
+        normalize(tmp.row(i), result.row(i), 1.0, 0, NORM_L1);
+    }
+
+    cout << result << endl;
 }

@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/nonfree/nonfree.hpp>
 #include <stdio.h>
+#include "headpose.h"
 
 using namespace std;
 using namespace cv;
@@ -28,6 +29,13 @@ public:
     static double faceTestP(const vector<vector<vector<Mat>>> &Faces, const Mat &codeBook,
                          const vector<vector<vector<Mat>>> &BOWrepresentation, int const k_th,
                              const vector<Mat> &mean, const vector<Mat> &covar);
+
+    static void poseRecognition(vector<vector<vector<Mat>>> pose, HeadPose hp);
+
+    static void poseTrain(vector<vector<vector<Mat>>> &pose, Mat &codeBook, vector<vector<vector<Mat>>> &poseDescriptors,
+                              int const numCodeWords);
+
+    static void poseTest(const HeadPose hp, const Mat &codeBook, const vector<vector<vector<Mat>>> &poseDescriptor);
 };
 
 #endif // BOW_H
