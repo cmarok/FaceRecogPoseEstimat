@@ -16,6 +16,8 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "bow.h"
 #include "headpose.h"
+#include "EigPoseEstimation.h"
+#include "EigProbRecognition.h"
 #include <iostream>
 #include <string>
 #include <iomanip>
@@ -31,23 +33,38 @@ void createFaceSet(vector<vector<vector<Mat>>> &Faces, vector<Mat> &faceSet);
 void partitionImages(vector<Mat> &faceSet, vector<Mat> &training, vector<Mat> &testing, int k, int fold);
 
 void LoadQMUL(vector<vector<vector<Mat>>> &Faces);
+void LoadQMUL_cas(vector<vector<vector<Mat>>> &Faces_cas);
 void Display_subject(vector<vector<vector<Mat>>> &Faces, int Subject_number);
 
 int main(int argc, const char * argv[]) 
 {    
     //faces array
     vector<vector<vector<Mat>>> Faces;
+    vector<vector<vector<Mat>>> Faces2;
+
     vector<vector<vector<Mat>>> Pose;
     LoadQMUL(Faces);
+
+    // I get discontinous data sor some reason, so I just adapted the method for me
+    LoadQMUL_cas(Faces2);
     
     //choose who to display
-    int subject_number = 35;//index
+    int subject_number = 30;//index
     
     //display subject function
-    Display_subject(Faces,subject_number);
+    // Display_subject(Faces,subject_number);
 
-    HeadPose hp = HeadPose("/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/HeadPoseImageDatabase/");
-    hp.displayImages(2, 15);
+    const string cas_path = "/Users/casimirdesarmeaux/Documents/McGill/ECSE-415/Project/HeadPoseImageDatabase/";
+    const string meong_path = "/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/HeadPoseImageDatabase/";
+
+    HeadPose hp = HeadPose(cas_path);
+    // hp.displayImages(2, 15);
+
+    // ---- EIGENFACE POSE ESTIMATION ---UNCOMMENT TO ENABLE
+    //EigPoseEstimation epe = EigPoseEstimation(Faces2, hp.hp_dataset, hp.hp_labels);
+
+    // ---- EIGENFACE PROBABILISTIC FACE RECOGNITION ---UNCOMMENT TO ENABLE
+    //EigProbRecognition eigProb = EigProbRecognition(Faces2);
 
     // --------- BOW TESTING ----------------------
 //    initModule_nonfree();
@@ -146,7 +163,9 @@ void LoadQMUL(vector<vector<vector<Mat>>> &Faces)
 {
     
     //change to location of grey dataset when running on another machine
-    const string Dataset_location = "/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/QMUL/Set1_Greyscale/";
+    const string cas_path = "/Users/casimirdesarmeaux/Documents/McGill/ECSE-415/Project/QMUL/";
+    const string meong_path = "/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/QMUL/Set1_Greyscale/";    
+    const string Dataset_location = cas_path;
     
     const vector<string> Subject_names = {"AdamB", "AndreeaV", "CarlaB", "ColinP", "DanJ", "DennisP",
                                           "DennisPNoGlasses", "DerekC", "GrahamW", "HeatherL", "Jack",
@@ -183,6 +202,53 @@ void LoadQMUL(vector<vector<vector<Mat>>> &Faces)
         Faces.push_back(Tilting);
     }
 }
+
+
+void LoadQMUL_cas(vector<vector<vector<Mat>>> &Faces_cas)
+{
+    
+    //change to location of grey dataset when running on another machine
+    const string cas_path = "/Users/casimirdesarmeaux/Documents/McGill/ECSE-415/Project/QMUL/";
+    const string meong_path = "/Users/MeongheeSeo/Documents/2016 Winter/ECSE 415/Projects/QMUL/Set1_Greyscale/";    
+    const string Dataset_location = cas_path;
+    
+    const vector<string> Subject_names = {"AdamB", "AndreeaV", "CarlaB", "ColinP", "DanJ", "DennisP",
+                                          "DennisPNoGlasses", "DerekC", "GrahamW", "HeatherL", "Jack",
+                                          "JamieS", "John", "KateS", "KatherineW", "KeithC",
+                                          "KrystynaN", "PaulV", "RichardB", "RichardH",
+                                          "SarahL", "SeanG", "SeanGNoGlasses", "SimonB", "SueW", "TasosH", "TomK",
+                                          "YogeshR", "YongminY"};
+    const vector<string> Subject_names2 = {"AdamB", "AndreeaV", "CarlaB", "ColinP", "DanJ", "DennisP",
+                                           "DennisPNoGlasses", "DerekC", "GrahamW", "HeatherL", "Jack",
+                                           "JamieS", "John","KateS", "KatherineW", "KeithC",
+                                           "KrystynaN", "PaulV", "RichardB", "RichardH", "SarahL",
+                                           "SeanG", "SeanGNoGlasses", "SimonB", "SueW", "TasosH", "TomK", "YogeshR",
+                                           "YongminY"};
+    const vector<string> Tilt_code = {"060", "070", "080", "090", "100", "110", "120"};
+    const vector<string> Pan_code = {"000", "010", "020", "030", "040", "050", "060", "070", "080", "090",
+                                     "100", "110", "120", "130", "140", "150", "160", "170", "180"};
+    //there may be nicer ways of doing it but this was the fastest to code (and i expect run since no int->str conversions etc)
+    
+    //loops load all the images
+    for (int i = 0; i < Subject_names.size(); i++){
+        vector<vector<Mat>> Tilting;
+        for (int j = 0; j < Tilt_code.size(); j++){
+            vector<Mat> Panning;
+            for (int k=0; k<Pan_code.size();k++){
+                string temp = Dataset_location + Subject_names[i] + "Grey/" + Subject_names2[i] + "_" +
+                        Tilt_code[j] + "_" + Pan_code[k] + ".ras";
+                
+                Panning.push_back(imread(temp));
+            }
+
+            Tilting.push_back(Panning);
+        }
+        
+        Faces_cas.push_back(Tilting);
+    }
+}
+
+
 
 void Display_subject(vector<vector<vector<Mat>>> &Faces, int Subject_number)
 {

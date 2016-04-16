@@ -57,6 +57,12 @@ HeadPose::HeadPose(string path)
 
                     // Store annotations Rect(x, y, width, height)
                     tilt_annotation.push_back(Rect(x_center-50, y_center-50, 100, 100));
+                    
+                    if (!original.empty()) {
+                        hp_dataset.push_back(original(Rect(x_center-50, y_center-50, 100, 100)));
+                        vector<int> label = {t,p};
+                        hp_labels.push_back(label);
+                    }
                     tilt_vector.push_back(original);
                 }
 

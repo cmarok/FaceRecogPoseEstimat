@@ -22,7 +22,9 @@ private:
 
 public:
     vector<vector<vector<vector<Mat>>>> images;
-
+    vector<Mat> hp_dataset;
+    vector<vector<int>> hp_labels;
+    
     vector<vector<vector<vector<Rect>>>> annotations;
 
     HeadPose(string path);
